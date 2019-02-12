@@ -1,11 +1,15 @@
 # WhereTo
 A parser from a simplified sql WHERE to any other syntax.
 
-# Supported operators
-= != < > and or ( )
+# Supported keywords
+= != < > and or ( ) '
 
-# Example input
-a=b or (a>c and b!=c)
+# Example inputs
+a=1.1 or a='foo'\bar'
+a='b' or (a>1 and c!=true)
+
+# Usage
+
 
 # License
 MIT
