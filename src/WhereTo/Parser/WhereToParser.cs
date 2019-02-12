@@ -20,7 +20,7 @@ namespace WhereTo.Parser
 			{ Keywords.RightBracket, "(\\))" },
 			{ Keywords.SingleQuote, "(?:[^\\\\]|^)(')" },
 		};
-		private readonly Dictionary<Keywords, string> _joiningKeywordRegExes = new Dictionary<Keywords, string>
+		private readonly Dictionary<Keywords, string> _joinKeywordRegExes = new Dictionary<Keywords, string>
 		{
 			{ Keywords.And, "(and )" },
 			{ Keywords.Or, "(or )" },
@@ -28,7 +28,7 @@ namespace WhereTo.Parser
 
 		private string _context;
 		private string _originalInput;
-		private bool _allowJoinKeyword;
+		private bool _allowJoinKeywords;
 
 		public IExpression Parse(string input)
 		{
@@ -65,30 +65,30 @@ namespace WhereTo.Parser
 					case Keywords.LessThanOrEqualTo:
 					case Keywords.MoreThan:
 					case Keywords.MoreThanOrEqualTo:
-						_allowJoinKeyword = true;
+						_allowJoinKeywords = true;
 						metaExpressions.Add(HandleOperators(keyword));
 						break;
 
 					case Keywords.LeftBracket:
-						_allowJoinKeyword = false;
+						_allowJoinKeywords = false;
 						_context = _context.Remove(0, "(".Length);
 						metaExpressions.Add(new MetaExpression(Keywords.LeftBracket, "", ""));
 						break;
 
 					case Keywords.RightBracket:
-						_allowJoinKeyword = true;
+						_allowJoinKeywords = true;
 						_context = _context.Remove(0, ")".Length);
 						metaExpressions.Add(new MetaExpression(Keywords.RightBracket, "", ""));
 						break;
 
 					case Keywords.And:
-						_allowJoinKeyword = false;
+						_allowJoinKeywords = false;
 						_context = _context.Remove(0, "and ".Length);
 						metaExpressions.Add(new MetaExpression(Keywords.And, "", ""));
 						break;
 
 					case Keywords.Or:
-						_allowJoinKeyword = false;
+						_allowJoinKeywords = false;
 						_context = _context.Remove(0, "or ".Length);
 						metaExpressions.Add(new MetaExpression(Keywords.Or, "", ""));
 						break;
@@ -201,13 +201,18 @@ namespace WhereTo.Parser
 		{
 			try
 			{
-				var firstPart = _context.Substring(0, keyword.index).Trim();
-				if (firstPart.Contains(" "))
+				// Left side of operator
+				var leftSide = _context.Substring(0, keyword.index).Trim();
+				if (leftSide.Contains(" "))
 				{
 					throw new ArgumentException($"Cannot parse WhereTo query: '{_originalInput}'");
 				}
+
+				// Remove operator
 				var operatorSize = keyword.keyword == Keywords.Equals || keyword.keyword == Keywords.LessThan || keyword.keyword == Keywords.MoreThan ? 1 : 2;
 				_context = _context.Remove(0, keyword.index + operatorSize).Trim();
+
+				// Right side of operator
 				var nextKeyword = FindNextKeyword();
 				int endIndex;
 				if (nextKeyword.keyword == Keywords.SingleQuote)
@@ -224,10 +229,10 @@ namespace WhereTo.Parser
 						? nextKeyword.index
 						: _context.Length;
 				}
-				var secondPart = _context.Substring(0, endIndex).Trim();
+				var rightSide = _context.Substring(0, endIndex).Trim();
 				_context = _context.Remove(0, endIndex);
 
-				return new MetaExpression(keyword.keyword, firstPart, secondPart);
+				return new MetaExpression(keyword.keyword, leftSide, rightSide);
 			}
 			catch (Exception e)
 			{
@@ -250,18 +255,18 @@ namespace WhereTo.Parser
 				}
 			}
 
-			if (_allowJoinKeyword == false)
+			if (_allowJoinKeywords == false)
 			{
 				return (keyword, foundAt);
 			}
 
-			foreach (var keywordJoiningRegEx in _joiningKeywordRegExes)
+			foreach (var joinKeywordRegEx in _joinKeywordRegExes)
 			{
-				var index = _context.FindFirstRegExGroup(keywordJoiningRegEx.Value);
+				var index = _context.FindFirstRegExGroup(joinKeywordRegEx.Value);
 				if (index >= 0 && (foundAt == -1 || index < foundAt))
 				{
 					foundAt = index;
-					keyword = keywordJoiningRegEx.Key;
+					keyword = joinKeywordRegEx.Key;
 				}
 			}
 
