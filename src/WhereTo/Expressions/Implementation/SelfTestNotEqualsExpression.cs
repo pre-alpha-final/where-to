@@ -3,6 +3,7 @@
 	/*
 	 * Demo expression for testing purposes
 	 * It wraps the keyword it is responsible for in hashes
+	 * and the values in ampersands
 	 */
 	public class SelfTestNotEqualsExpression : IExpression
 	{
@@ -17,7 +18,7 @@
 
 		public string Evaluate()
 		{
-			return $"{_leftSide} #!=# {_rightSide}";
+			return $"&{_leftSide}& #!=# &{_rightSide}&";
 		}
 	}
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using WhereTo.Expressions;
 using WhereTo.Parser.Enums;
 using WhereTo.Parser.Extensions;
@@ -12,9 +13,9 @@ namespace WhereTo.Parser
 		{
 			{ Keywords.Equals, "(?:[^!])(=)" },
 			{ Keywords.NotEquals, "(!=)" },
-			{ Keywords.LessThan, "(<)" },
+			{ Keywords.LessThan, "(<)(?:[^=])" },
 			{ Keywords.LessThanOrEqualTo, "(<=)" },
-			{ Keywords.MoreThan, "(>)" },
+			{ Keywords.MoreThan, "(>)(?:[^=])" },
 			{ Keywords.MoreThanOrEqualTo, "(>=)" },
 			{ Keywords.LeftBracket, "(\\()" },
 			{ Keywords.RightBracket, "(\\))" },
@@ -262,6 +263,7 @@ namespace WhereTo.Parser
 						: _context.Length;
 				}
 				var rightSide = _context.Substring(0, endIndex).Trim();
+				ValidateRightSide(rightSide);
 				_context = _context.Remove(0, endIndex);
 
 				return new MetaExpression(keyword.keyword, leftSide, rightSide);
@@ -270,6 +272,26 @@ namespace WhereTo.Parser
 			{
 				throw new ArgumentException($"Cannot parse WhereTo query: '{_originalInput}'");
 			}
+		}
+
+		private void ValidateRightSide(string rightSide)
+		{
+			if (rightSide.StartsWith('\'') && rightSide.EndsWith('\''))
+			{
+				return;
+			}
+
+			if (rightSide == "true" || rightSide == "false")
+			{
+				return;
+			}
+
+			if (double.TryParse(rightSide, NumberStyles.Number, CultureInfo.InvariantCulture, out _))
+			{
+				return;
+			}
+
+			throw new ArgumentException($"Cannot parse WhereTo query: '{_originalInput}'");
 		}
 
 		private (Keywords keyword, int index) FindNextKeyword()
