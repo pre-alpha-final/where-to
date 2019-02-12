@@ -32,15 +32,15 @@ namespace WhereTo.Parser
 
 		public IExpression Parse(string input)
 		{
-			var metaExpressions = GenerateMetaExpressions(input);
+			_originalInput = input;
+			_context = input;
+			var metaExpressions = GenerateMetaExpressions();
 			return GenerateExpressions(metaExpressions);
 		}
 
-		private List<(Keywords type, string arg1, string arg2)> GenerateMetaExpressions(string input)
+		private List<MetaExpression> GenerateMetaExpressions()
 		{
-			_originalInput = input;
-			var metaExpressions = new List<(Keywords type, string arg1, string arg2)>();
-			_context = input;
+			var metaExpressions = new List<MetaExpression>();
 			while (true)
 			{
 				_context = _context.Trim();
@@ -72,25 +72,25 @@ namespace WhereTo.Parser
 					case Keywords.LeftBracket:
 						_allowJoinKeyword = false;
 						_context = _context.Remove(0, "(".Length);
-						metaExpressions.Add((Keywords.LeftBracket, "", ""));
+						metaExpressions.Add(new MetaExpression(Keywords.LeftBracket, "", ""));
 						break;
 
 					case Keywords.RightBracket:
 						_allowJoinKeyword = true;
 						_context = _context.Remove(0, ")".Length);
-						metaExpressions.Add((Keywords.RightBracket, "", ""));
+						metaExpressions.Add(new MetaExpression(Keywords.RightBracket, "", ""));
 						break;
 
 					case Keywords.And:
 						_allowJoinKeyword = false;
 						_context = _context.Remove(0, "and ".Length);
-						metaExpressions.Add((Keywords.And, "", ""));
+						metaExpressions.Add(new MetaExpression(Keywords.And, "", ""));
 						break;
 
 					case Keywords.Or:
 						_allowJoinKeyword = false;
 						_context = _context.Remove(0, "or ".Length);
-						metaExpressions.Add((Keywords.Or, "", ""));
+						metaExpressions.Add(new MetaExpression(Keywords.Or, "", ""));
 						break;
 
 					case Keywords.SingleQuote:
@@ -102,7 +102,7 @@ namespace WhereTo.Parser
 			return metaExpressions;
 		}
 
-		private IExpression GenerateExpressions(List<(Keywords type, string arg1, string arg2)> metaExpressions)
+		private IExpression GenerateExpressions(List<MetaExpression> metaExpressions)
 		{
 			var minimizing = false;
 			var expressions = new List<IExpression>();
@@ -112,7 +112,7 @@ namespace WhereTo.Parser
 				{
 					foreach (var metaExpression in metaExpressions)
 					{
-						if (metaExpression.type == Keywords.Equals)
+						if (metaExpression.Keyword == Keywords.Equals)
 						{
 
 						}
@@ -125,7 +125,7 @@ namespace WhereTo.Parser
 			}
 		}
 
-		private (Keywords type, string arg1, string arg2) HandleOperators((Keywords keyword, int index) keyword)
+		private MetaExpression HandleOperators((Keywords keyword, int index) keyword)
 		{
 			try
 			{
@@ -155,7 +155,7 @@ namespace WhereTo.Parser
 				var secondPart = _context.Substring(0, endIndex).Trim();
 				_context = _context.Remove(0, endIndex);
 
-				return (keyword.keyword, firstPart, secondPart);
+				return new MetaExpression(keyword.keyword, firstPart, secondPart);
 			}
 			catch (Exception e)
 			{
