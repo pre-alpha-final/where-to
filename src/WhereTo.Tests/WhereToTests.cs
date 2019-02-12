@@ -49,7 +49,7 @@ namespace WhereTo.Tests
 			@"&and& #=# &'and=\'and\' and (and>1 and and!=true)'& #and# #(#&and& #># &1& #and# &and& #!=# &true&#)#")]
 		public void WhenInputCorrect_ShouldParse(string input, string expectedResult)
 		{
-			var whereToParser = new WhereToParser(new SelfTestExpressionFactory());
+			var whereToParser = new WhereToParser();
 			var expression = whereToParser.Parse(input);
 			var result = expression.Evaluate();
 
@@ -68,7 +68,7 @@ namespace WhereTo.Tests
 		[InlineData(@"a=""foo""")]
 		public void WhenInputIncorrect_ShouldThrowException(string input)
 		{
-			var whereToParser = new WhereToParser(new SelfTestExpressionFactory());
+			var whereToParser = new WhereToParser();
 			Assert.Throws<ArgumentException>(() => whereToParser.Parse(input));
 		}
 	}
