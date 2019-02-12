@@ -102,22 +102,94 @@ namespace WhereTo.Parser
 			return metaExpressions;
 		}
 
-		private IExpression GenerateExpressions(List<MetaExpression> metaExpressions)
+		private IExpression GenerateExpressions(IList<MetaExpression> metaExpressions)
 		{
-			var minimizing = false;
-			var expressions = new List<IExpression>();
 			try
 			{
+				var minimizing = false;
 				do
 				{
-					foreach (var metaExpression in metaExpressions)
+					for (var i = 0; i < metaExpressions.Count; i++)
 					{
-						if (metaExpression.Keyword == Keywords.Equals)
+						if (metaExpressions[i].ConcreteExpression != null)
 						{
+							continue;
+						}
 
+						if (metaExpressions[i].Keyword == Keywords.Equals)
+						{
+							// factory
+							minimizing = true;
+						}
+
+						if (metaExpressions[i].Keyword == Keywords.NotEquals)
+						{
+							// factory
+							minimizing = true;
+						}
+
+						if (metaExpressions[i].Keyword == Keywords.LessThan)
+						{
+							// factory
+							minimizing = true;
+						}
+
+						if (metaExpressions[i].Keyword == Keywords.LessThanOrEqualTo)
+						{
+							// factory
+							minimizing = true;
+						}
+
+						if (metaExpressions[i].Keyword == Keywords.MoreThan)
+						{
+							// factory
+							minimizing = true;
+						}
+
+						if (metaExpressions[i].Keyword == Keywords.MoreThanOrEqualTo)
+						{
+							// factory
+							minimizing = true;
+						}
+
+						if (metaExpressions[i].Keyword == Keywords.And &&
+							metaExpressions[i - 1].ConcreteExpression != null &&
+							metaExpressions[i + 1].ConcreteExpression != null)
+						{
+							// factory
+							// +1 -1 item removal
+							minimizing = true;
+							break;
+						}
+
+						if (metaExpressions[i].Keyword == Keywords.Or &&
+							metaExpressions[i - 1].ConcreteExpression != null &&
+							metaExpressions[i + 1].ConcreteExpression != null)
+						{
+							// factory
+							// +1 -1 item removal
+							minimizing = true;
+							break;
+						}
+
+						if (metaExpressions[i].Keyword == Keywords.LeftBracket &&
+							metaExpressions[i + 1].ConcreteExpression != null &&
+							metaExpressions[i + 2].Keyword == Keywords.RightBracket)
+						{
+							// factory
+							// +1 +2 item removal
+							minimizing = true;
+							break;
 						}
 					}
 				} while (minimizing);
+
+				if (metaExpressions.Count > 1)
+				{
+					throw new ArgumentException($"Cannot minimize WhereTo query: '{_originalInput}'");
+				}
+
+				return metaExpressions[0].ConcreteExpression;
 			}
 			catch (Exception e)
 			{

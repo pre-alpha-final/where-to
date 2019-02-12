@@ -8,7 +8,7 @@ namespace WhereTo.Parser
 		public Keywords Keyword { get; set; }
 		public string Argument1 { get; set; }
 		public string Argument2 { get; set; }
-		public IExpression Expression { get; set; }
+		public IExpression ConcreteExpression { get; set; }
 
 		public MetaExpression(Keywords keyword, string argument1, string argument2)
 		{
