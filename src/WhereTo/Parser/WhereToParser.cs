@@ -221,7 +221,9 @@ namespace WhereTo.Parser
 					{
 						throw new ArgumentException($"Cannot parse WhereTo query: '{_originalInput}'");
 					}
-					endIndex = _context.IndexOf('\'', 1) + 1;
+					endIndex = _context
+						.Substring(1, _context.Length -1)
+						.FindFirstRegExGroup(_keywordRegExes[Keywords.SingleQuote]) + 1;
 				}
 				else
 				{
