@@ -32,19 +32,19 @@
 			return new SelfTestMoreThanOrEqualToExpression(leftSide, rightSide);
 		}
 
-		public IExpression CreateAndExpression()
+		public IExpression CreateAndExpression(IExpression leftSide, IExpression rightSide)
 		{
-			return new SelfTestAndExpression();
+			return new SelfTestAndExpression(leftSide, rightSide);
 		}
 
-		public IExpression CreateOrExpression()
+		public IExpression CreateOrExpression(IExpression leftSide, IExpression rightSide)
 		{
-			return new SelfTestOrExpression();
+			return new SelfTestOrExpression(leftSide, rightSide);
 		}
 
-		public IExpression CreateGroupExpression()
+		public IExpression CreateGroupExpression(IExpression content)
 		{
-			return new SelfTestGroupExpression();
+			return new SelfTestGroupExpression(content);
 		}
 	}
 }

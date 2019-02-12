@@ -26,9 +26,15 @@ namespace WhereTo.Parser
 			{ Keywords.Or, "(or )" },
 		};
 
+		private readonly IExpressionFactory _expressionFactory;
 		private string _context;
 		private string _originalInput;
 		private bool _allowJoinKeywords;
+
+		public WhereToParser(IExpressionFactory expressionFactory)
+		{
+			_expressionFactory = expressionFactory;
+		}
 
 		public IExpression Parse(string input)
 		{
@@ -106,9 +112,10 @@ namespace WhereTo.Parser
 		{
 			try
 			{
-				var minimizing = false;
+				bool minimizing;
 				do
 				{
+					minimizing = false;
 					for (var i = 0; i < metaExpressions.Count; i++)
 					{
 						if (metaExpressions[i].ConcreteExpression != null)
@@ -118,37 +125,49 @@ namespace WhereTo.Parser
 
 						if (metaExpressions[i].Keyword == Keywords.Equals)
 						{
-							// factory
+							metaExpressions[i].ConcreteExpression =
+								_expressionFactory.CreateEqualsExpression(
+									metaExpressions[i].Argument1, metaExpressions[i].Argument2);
 							minimizing = true;
 						}
 
 						if (metaExpressions[i].Keyword == Keywords.NotEquals)
 						{
-							// factory
+							metaExpressions[i].ConcreteExpression =
+								_expressionFactory.CreateNotEqualsExpression(
+									metaExpressions[i].Argument1, metaExpressions[i].Argument2);
 							minimizing = true;
 						}
 
 						if (metaExpressions[i].Keyword == Keywords.LessThan)
 						{
-							// factory
+							metaExpressions[i].ConcreteExpression =
+								_expressionFactory.CreateLessThanExpression(
+									metaExpressions[i].Argument1, metaExpressions[i].Argument2);
 							minimizing = true;
 						}
 
 						if (metaExpressions[i].Keyword == Keywords.LessThanOrEqualTo)
 						{
-							// factory
+							metaExpressions[i].ConcreteExpression =
+								_expressionFactory.CreateLessThanOrEqualToExpression(
+									metaExpressions[i].Argument1, metaExpressions[i].Argument2);
 							minimizing = true;
 						}
 
 						if (metaExpressions[i].Keyword == Keywords.MoreThan)
 						{
-							// factory
+							metaExpressions[i].ConcreteExpression =
+								_expressionFactory.CreateMoreThanExpression(
+									metaExpressions[i].Argument1, metaExpressions[i].Argument2);
 							minimizing = true;
 						}
 
 						if (metaExpressions[i].Keyword == Keywords.MoreThanOrEqualTo)
 						{
-							// factory
+							metaExpressions[i].ConcreteExpression =
+								_expressionFactory.CreateMoreThanOrEqualToExpression(
+									metaExpressions[i].Argument1, metaExpressions[i].Argument2);
 							minimizing = true;
 						}
 
@@ -156,8 +175,12 @@ namespace WhereTo.Parser
 							metaExpressions[i - 1].ConcreteExpression != null &&
 							metaExpressions[i + 1].ConcreteExpression != null)
 						{
-							// factory
-							// +1 -1 item removal
+							metaExpressions[i].ConcreteExpression =
+								_expressionFactory.CreateAndExpression(
+									metaExpressions[i - 1].ConcreteExpression,
+									metaExpressions[i + 1].ConcreteExpression);
+							metaExpressions.RemoveAt(i + 1);
+							metaExpressions.RemoveAt(i - 1);
 							minimizing = true;
 							break;
 						}
@@ -166,8 +189,12 @@ namespace WhereTo.Parser
 							metaExpressions[i - 1].ConcreteExpression != null &&
 							metaExpressions[i + 1].ConcreteExpression != null)
 						{
-							// factory
-							// +1 -1 item removal
+							metaExpressions[i].ConcreteExpression =
+								_expressionFactory.CreateOrExpression(
+									metaExpressions[i - 1].ConcreteExpression,
+									metaExpressions[i + 1].ConcreteExpression);
+							metaExpressions.RemoveAt(i + 1);
+							metaExpressions.RemoveAt(i - 1);
 							minimizing = true;
 							break;
 						}
@@ -176,8 +203,11 @@ namespace WhereTo.Parser
 							metaExpressions[i + 1].ConcreteExpression != null &&
 							metaExpressions[i + 2].Keyword == Keywords.RightBracket)
 						{
-							// factory
-							// +1 +2 item removal
+							metaExpressions[i].ConcreteExpression =
+								_expressionFactory.CreateGroupExpression(
+									metaExpressions[i + 1].ConcreteExpression);
+							metaExpressions.RemoveAt(i + 2);
+							metaExpressions.RemoveAt(i + 1);
 							minimizing = true;
 							break;
 						}
@@ -222,7 +252,7 @@ namespace WhereTo.Parser
 						throw new ArgumentException($"Cannot parse WhereTo query: '{_originalInput}'");
 					}
 					endIndex = _context
-						.Substring(1, _context.Length -1)
+						.Substring(1, _context.Length - 1)
 						.FindFirstRegExGroup(_keywordRegExes[Keywords.SingleQuote]) + 1;
 				}
 				else
