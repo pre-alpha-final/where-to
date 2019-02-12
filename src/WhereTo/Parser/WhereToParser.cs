@@ -29,12 +29,17 @@ namespace WhereTo.Parser
 		private string _context;
 		private string _originalInput;
 		private bool _allowJoinKeyword;
-		private readonly List<(Keywords type, string arg1, string arg2)> _metaExpressions = new List<(Keywords type, string arg1, string arg2)>();
 
 		public IExpression Parse(string input)
 		{
+			var metaExpressions = GenerateMetaExpressions(input);
+			return GenerateExpressions(metaExpressions);
+		}
+
+		private List<(Keywords type, string arg1, string arg2)> GenerateMetaExpressions(string input)
+		{
 			_originalInput = input;
-			_metaExpressions.Clear();
+			var metaExpressions = new List<(Keywords type, string arg1, string arg2)>();
 			_context = input;
 			while (true)
 			{
@@ -61,31 +66,31 @@ namespace WhereTo.Parser
 					case Keywords.MoreThan:
 					case Keywords.MoreThanOrEqualTo:
 						_allowJoinKeyword = true;
-						HandleExpression(keyword);
+						metaExpressions.Add(HandleOperators(keyword));
 						break;
 
 					case Keywords.LeftBracket:
 						_allowJoinKeyword = false;
 						_context = _context.Remove(0, "(".Length);
-						_metaExpressions.Add((Keywords.LeftBracket, "", ""));
+						metaExpressions.Add((Keywords.LeftBracket, "", ""));
 						break;
 
 					case Keywords.RightBracket:
 						_allowJoinKeyword = true;
 						_context = _context.Remove(0, ")".Length);
-						_metaExpressions.Add((Keywords.RightBracket, "", ""));
+						metaExpressions.Add((Keywords.RightBracket, "", ""));
 						break;
 
 					case Keywords.And:
 						_allowJoinKeyword = false;
 						_context = _context.Remove(0, "and ".Length);
-						_metaExpressions.Add((Keywords.And, "", ""));
+						metaExpressions.Add((Keywords.And, "", ""));
 						break;
 
 					case Keywords.Or:
 						_allowJoinKeyword = false;
 						_context = _context.Remove(0, "or ".Length);
-						_metaExpressions.Add((Keywords.Or, "", ""));
+						metaExpressions.Add((Keywords.Or, "", ""));
 						break;
 
 					case Keywords.SingleQuote:
@@ -93,19 +98,43 @@ namespace WhereTo.Parser
 						break;
 				}
 			}
-			throw new NotImplementedException();
+
+			return metaExpressions;
 		}
 
-		private void HandleExpression((Keywords keyword, int index) keyword)
+		private IExpression GenerateExpressions(List<(Keywords type, string arg1, string arg2)> metaExpressions)
+		{
+			var minimizing = false;
+			var expressions = new List<IExpression>();
+			try
+			{
+				do
+				{
+					foreach (var metaExpression in metaExpressions)
+					{
+						if (metaExpression.type == Keywords.Equals)
+						{
+
+						}
+					}
+				} while (minimizing);
+			}
+			catch (Exception e)
+			{
+				throw new ArgumentException($"Cannot minimize WhereTo query: '{_originalInput}'");
+			}
+		}
+
+		private (Keywords type, string arg1, string arg2) HandleOperators((Keywords keyword, int index) keyword)
 		{
 			try
 			{
-				var operatorSize = keyword.keyword == Keywords.Equals || keyword.keyword == Keywords.LessThan || keyword.keyword == Keywords.MoreThan ? 1: 2;
 				var firstPart = _context.Substring(0, keyword.index).Trim();
 				if (firstPart.Contains(" "))
 				{
 					throw new ArgumentException($"Cannot parse WhereTo query: '{_originalInput}'");
 				}
+				var operatorSize = keyword.keyword == Keywords.Equals || keyword.keyword == Keywords.LessThan || keyword.keyword == Keywords.MoreThan ? 1 : 2;
 				_context = _context.Remove(0, keyword.index + operatorSize).Trim();
 				var nextKeyword = FindNextKeyword();
 				int endIndex;
@@ -125,7 +154,8 @@ namespace WhereTo.Parser
 				}
 				var secondPart = _context.Substring(0, endIndex).Trim();
 				_context = _context.Remove(0, endIndex);
-				_metaExpressions.Add((keyword.keyword, firstPart, secondPart));
+
+				return (keyword.keyword, firstPart, secondPart);
 			}
 			catch (Exception e)
 			{
