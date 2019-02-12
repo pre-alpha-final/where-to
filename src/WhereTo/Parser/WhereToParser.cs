@@ -253,7 +253,7 @@ namespace WhereTo.Parser
 					}
 					endIndex = _context
 						.Substring(1, _context.Length - 1)
-						.FindFirstRegExGroup(_keywordRegExes[Keywords.SingleQuote]) + 1;
+						.FindFirstRegExGroup(_keywordRegExes[Keywords.SingleQuote]) + 2;
 				}
 				else
 				{

@@ -1,5 +1,9 @@
 ﻿namespace WhereTo.Expressions.Implementation
 {
+	/*
+	 * Demo expression for testing purposes
+	 * It wraps the keyword it is responsible for in hashes
+	 */
 	public class SelfTestGroupExpression : IExpression
 	{
 		private readonly IExpression _content;
@@ -11,7 +15,7 @@
 
 		public string Evaluate()
 		{
-			throw new System.NotImplementedException();
+			return $"#(#{_content.Evaluate()}#)#";
 		}
 	}
 }

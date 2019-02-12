@@ -1,5 +1,9 @@
 ﻿namespace WhereTo.Expressions.Implementation
 {
+	/*
+	 * Demo expression for testing purposes
+	 * It wraps the keyword it is responsible for in hashes
+	 */
 	public class SelfTestMoreThanOrEqualToExpression : IExpression
 	{
 		private readonly string _leftSide;
@@ -13,7 +17,7 @@
 
 		public string Evaluate()
 		{
-			throw new System.NotImplementedException();
+			return $"{_leftSide} #>=# {_rightSide}";
 		}
 	}
 }
