@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using WhereTo.Expressions;
+using WhereTo.Parser.Enums;
 using WhereTo.Parser.Extensions;
 
 namespace WhereTo.Parser
@@ -9,40 +10,160 @@ namespace WhereTo.Parser
 	{
 		private readonly Dictionary<Keywords, string> _keywordRegExes = new Dictionary<Keywords, string>
 		{
-			{ Keywords.Equals, "([=]?)" }
+			{ Keywords.Equals, "(?:[^!])(=)" },
+			{ Keywords.NotEquals, "(!=)" },
+			{ Keywords.LessThan, "(<)" },
+			{ Keywords.LessThanOrEqualTo, "(<=)" },
+			{ Keywords.MoreThan, "(>)" },
+			{ Keywords.MoreThanOrEqualTo, "(>=)" },
+			{ Keywords.LeftBracket, "(\\()" },
+			{ Keywords.RightBracket, "(\\))" },
+			{ Keywords.SingleQuote, "(?:[^\\\\]|^)(')" },
 		};
+		private readonly Dictionary<Keywords, string> _joiningKeywordRegExes = new Dictionary<Keywords, string>
+		{
+			{ Keywords.And, "(and )" },
+			{ Keywords.Or, "(or )" },
+		};
+
+		private string _context;
+		private string _originalInput;
+		private bool _allowJoinKeyword;
+		private readonly List<(Keywords type, string arg1, string arg2)> _metaExpressions = new List<(Keywords type, string arg1, string arg2)>();
 
 		public IExpression Parse(string input)
 		{
-			bool didParsing;
-			var processedInput = input.Trim();
-			var keyword = FindNextKeyword(processedInput);
-			switch (keyword)
+			_originalInput = input;
+			_metaExpressions.Clear();
+			_context = input;
+			while (true)
 			{
-				// take operator
+				_context = _context.Trim();
+				var keyword = FindNextKeyword();
+				if (keyword.keyword == Keywords.None)
+				{
+					if (string.IsNullOrWhiteSpace(_context) == false)
+					{
+						throw new ArgumentException($"Cannot parse WhereTo query: '{_originalInput}'");
+					}
+					break;
+				}
 
-				// take expression
+				switch (keyword.keyword)
+				{
+					case Keywords.None:
+						break;
+
+					case Keywords.Equals:
+					case Keywords.NotEquals:
+					case Keywords.LessThan:
+					case Keywords.LessThanOrEqualTo:
+					case Keywords.MoreThan:
+					case Keywords.MoreThanOrEqualTo:
+						_allowJoinKeyword = true;
+						HandleExpression(keyword);
+						break;
+
+					case Keywords.LeftBracket:
+						_allowJoinKeyword = false;
+						_context = _context.Remove(0, "(".Length);
+						_metaExpressions.Add((Keywords.LeftBracket, "", ""));
+						break;
+
+					case Keywords.RightBracket:
+						_allowJoinKeyword = true;
+						_context = _context.Remove(0, ")".Length);
+						_metaExpressions.Add((Keywords.RightBracket, "", ""));
+						break;
+
+					case Keywords.And:
+						_allowJoinKeyword = false;
+						_context = _context.Remove(0, "and ".Length);
+						_metaExpressions.Add((Keywords.And, "", ""));
+						break;
+
+					case Keywords.Or:
+						_allowJoinKeyword = false;
+						_context = _context.Remove(0, "or ".Length);
+						_metaExpressions.Add((Keywords.Or, "", ""));
+						break;
+
+					case Keywords.SingleQuote:
+						_context = _context.Remove(keyword.index, 1);
+						break;
+				}
 			}
-
 			throw new NotImplementedException();
 		}
 
-		private Keywords FindNextKeyword(string processedInput)
+		private void HandleExpression((Keywords keyword, int index) keyword)
+		{
+			try
+			{
+				var operatorSize = keyword.keyword == Keywords.Equals || keyword.keyword == Keywords.LessThan || keyword.keyword == Keywords.MoreThan ? 1: 2;
+				var firstPart = _context.Substring(0, keyword.index).Trim();
+				if (firstPart.Contains(" "))
+				{
+					throw new ArgumentException($"Cannot parse WhereTo query: '{_originalInput}'");
+				}
+				_context = _context.Remove(0, keyword.index + operatorSize).Trim();
+				var nextKeyword = FindNextKeyword();
+				int endIndex;
+				if (nextKeyword.keyword == Keywords.SingleQuote)
+				{
+					if (nextKeyword.index != 0)
+					{
+						throw new ArgumentException($"Cannot parse WhereTo query: '{_originalInput}'");
+					}
+					endIndex = _context.IndexOf('\'', 1) + 1;
+				}
+				else
+				{
+					endIndex = nextKeyword.index != -1
+						? nextKeyword.index
+						: _context.Length;
+				}
+				var secondPart = _context.Substring(0, endIndex).Trim();
+				_context = _context.Remove(0, endIndex);
+				_metaExpressions.Add((keyword.keyword, firstPart, secondPart));
+			}
+			catch (Exception e)
+			{
+				throw new ArgumentException($"Cannot parse WhereTo query: '{_originalInput}'");
+			}
+		}
+
+		private (Keywords keyword, int index) FindNextKeyword()
 		{
 			var foundAt = -1;
 			var keyword = Keywords.None;
 
 			foreach (var keywordRegEx in _keywordRegExes)
 			{
-				var index = processedInput.RegExFind(keywordRegEx.Value);
-				if (index >= 0 && index < foundAt)
+				var index = _context.FindFirstRegExGroup(keywordRegEx.Value);
+				if (index >= 0 && (foundAt == -1 || index < foundAt))
 				{
 					foundAt = index;
 					keyword = keywordRegEx.Key;
 				}
 			}
 
-			return keyword;
+			if (_allowJoinKeyword == false)
+			{
+				return (keyword, foundAt);
+			}
+
+			foreach (var keywordJoiningRegEx in _joiningKeywordRegExes)
+			{
+				var index = _context.FindFirstRegExGroup(keywordJoiningRegEx.Value);
+				if (index >= 0 && (foundAt == -1 || index < foundAt))
+				{
+					foundAt = index;
+					keyword = keywordJoiningRegEx.Key;
+				}
+			}
+
+			return (keyword, foundAt);
 		}
 	}
 }

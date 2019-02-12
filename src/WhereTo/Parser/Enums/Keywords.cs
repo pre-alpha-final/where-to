@@ -1,4 +1,4 @@
-﻿namespace WhereTo.Parser
+﻿namespace WhereTo.Parser.Enums
 {
 	public enum Keywords
 	{
@@ -6,9 +6,13 @@
 		Equals,
 		NotEquals,
 		LessThan,
+		LessThanOrEqualTo,
 		MoreThan,
+		MoreThanOrEqualTo,
 		And,
 		Or,
+		LeftBracket,
+		RightBracket,
 		SingleQuote,
 	}
 }

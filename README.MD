@@ -2,7 +2,7 @@
 A parser from a simplified sql WHERE to any other syntax.
 
 # Supported keywords
-= != < > and or ( ) '
+= != < <= > >= and or ( ) '
 
 # Example inputs
 a=1.1 or a='foo'\bar'

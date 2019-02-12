@@ -1,16 +1,16 @@
 ﻿using System;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace WhereTo.Parser.Extensions
 {
 	public static class StringExtensions
 	{
-		public static int RegExFind(this string input, string pattern)
+		public static int FindFirstRegExGroup(this string input, string pattern)
 		{
 			try
 			{
-				return new Regex(pattern).Match(input).Groups.Skip(1).First().Index;
+				var result = new Regex(pattern).Match(input).Groups[1];
+				return result.Success ? result.Index : -1;
 			}
 			catch (Exception e)
 			{
