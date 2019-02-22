@@ -35,6 +35,8 @@ namespace WhereTo.Tests
 		[InlineData(@"a = 1 or  and = 1", @"&a& #=# &1& #or# &and& #=# &1&")]
 		[InlineData(@"a='foo\'bar'", @"&a& #=# &'foo\'bar'&")]
 		[InlineData(@"a='foo\""bar'", @"&a& #=# &'foo\""bar'&")]
+		[InlineData(@"a=1 or ((a=1 and a=1) and a=1)", "&a& #=# &1& #or# #(##(#&a& #=# &1& #and# &a& #=# &1&#)# #and# &a& #=# &1&#)#")]
+		[InlineData(@"a = 1 or ( ( a = 1 and a = 1 ) and a = 1 )", "&a& #=# &1& #or# #(##(#&a& #=# &1& #and# &a& #=# &1&#)# #and# &a& #=# &1&#)#")]
 		[InlineData(
 			@"a = 'b' or ( a > 1 and c != true ) and ( d = 1 )",
 			@"&a& #=# &'b'& #or# #(#&a& #># &1& #and# &c& #!=# &true&#)# #and# #(#&d& #=# &1&#)#")]
